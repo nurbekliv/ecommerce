@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <!-- Header-->
+    <header class="bg-dark py-5">
+        <div class="container px-4 px-lg-5 my-5">
+            <div class="text-center text-white">
+                <h1 class="display-4 fw-bolder">checkout</h1>
+                <p class="lead fw-normal text-white-50 mb-0">review your order</p>
+            </div>
+        </div>
+    </header>
+    <br/>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 offset-md-3">
+                <div class="card mb-4">
+                    <div class="card-header">order summary</div>
+                    <div class="card-body">
+                        {% for product in cart_products %}
+                            <div class="product-info">
+                                {{ product.name }}
+                                {% if product.is_sale %}
+                                    ${{ product.sale_price }}
+                                {% else %}
+                                    ${{ product.price }}
+                                {% endif %}
+
+                                <small class="product-quantity">Quantity:
+                                    {% for key, value in quantities.items %}
+                                        {% if key == product.id|slugify %}
+                                            {{ value }}
+                                        {% endif %}
+                                    {% endfor %}</small>
+                            </div>
+                        {% endfor %}
+                        <div class="total-price">
+                            total: ${{ totals }}
+                        </div>
+                        <a href="{% url 'cart_summary' %}" class="btn btn-sm btn-outline-secondary">update items</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">shipping info</div>
+                    <div class="card-body">
+                        <form method="post" action="{% url 'billing_info' %}">
+                            {% csrf_token %}
+                            {% for ship in shipping_form %}
+                                <div class="shipping-info">
+                                    {{ ship }}
+                                </div>
+                            {% endfor %}
+                            <a href="{% url 'cart_summary' %}" class="btn btn-sm btn-outline-secondary">update shipping
+                                info</a>
+                    </div>
+                </div>
+                <br/>
+                <button type="submit" class="btn btn-secondary">continue to billing</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <br/>
+
+    <script>
+        //update code
+        $(document).on('click', '.update-cart', function (e) {
+            e.preventDefault();
+            var productid = $(this).data('index');
+            var productQty = $('#select' + productid + ' option:selected').val();
+
+            $.ajax({
+                type: 'POST',
+                url: '{% url "cart_update" %}',
+                data: {
+                    product_id: productid,
+                    product_qty: productQty,
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    action: 'post'
+                },
+                success: function (json) {
+                    location.reload();
+                },
+                error: function (xhr, errmsg, err) {
+                    console.error(errmsg);
+                }
+            });
+        });
+
+        //delete code
+        $(document).on('click', '.delete-product', function (e) {
+            e.preventDefault();
+            var productid = $(this).data('index');
+
+            $.ajax({
+                type: 'POST',
+                url: '{% url "cart_delete" %}',
+                data: {
+                    product_id: productid,
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    action: 'post'
+                },
+                success: function (json) {
+                    location.reload();
+                },
+                error: function (xhr, errmsg, err) {
+                    console.error(errmsg);
+                }
+            });
+        });
+    </script>
+
+    <style>
+        .product-info, .shipping-info {
+            margin-bottom: 10px;
+        }
+
+        .product-quantity, .shipping-info {
+            display: block;
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+
+        .total-price {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 1.125rem;
+        }
+    </style>
+
+{% endblock %}

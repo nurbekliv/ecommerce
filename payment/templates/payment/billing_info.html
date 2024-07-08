@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <!-- Header-->
+    <header class="bg-dark py-5">
+        <div class="container px-4 px-lg-5 my-5">
+            <div class="text-center text-white">
+                <h1 class="display-4 fw-bolder">billing info</h1>
+                <p class="lead fw-normal text-white-50 mb-0">enter your payment info</p>
+            </div>
+        </div>
+    </header>
+    <br/>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 offset-md-3">
+                <div class="card">
+                    <div class="card-header">order summary</div>
+                    <div class="card-body">
+                        {% for product in cart_products %}
+                            <div class="product-info">
+                                {{ product.name }}
+                                {% if product.is_sale %}
+                                    ${{ product.sale_price }}
+                                {% else %}
+                                    ${{ product.price }}
+                                {% endif %}
+
+                                <small class="product-quantity">Quantity:
+                                    {% for key, value in quantities.items %}
+                                        {% if key == product.id|slugify %}
+                                            {{ value }}
+                                        {% endif %}
+                                    {% endfor %}</small>
+                            </div>
+                        {% endfor %}
+                        total: {{ totals }}<br/>
+                        <a href="{% url 'cart_summary' %}" class="btn btn-sm btn-outline-secondary">update items</a>
+                    </div>
+                </div>
+                <br/><br/><br/>
+                <div class="card">
+                    <div class="card-header">
+                        shipping info
+                    </div>
+                    <div class="card-body">
+
+                        Name:{{ shipping_info.shipping_full_name }}<br/>
+                        Email:{{ shipping_info.shipping_email }}<br/>
+                        Address1:{{ shipping_info.shipping_address1 }}<br/>
+                        City:{{ shipping_info.shipping_city }}<br/>
+                        State:{{ shipping_info.shipping_state }}<br/>
+                        Zipcode:{{ shipping_info.shipping_zipcode }}<br/>
+                        Country:{{ shipping_info.shipping_country }}<br/>
+                        <a href="{% url 'checkout' %}" class="btn btn-outline-secondary">update shipping</a>
+
+                    </div>
+                </div>
+                <br/><br/><br/><br/>
+                <div class="card">
+                    <div class="card-header">
+                        billing info
+                    </div>
+                    <div class="card-body">
+
+                        <form method="post" action="{% url 'process_order' %}">
+                            {% csrf_token %}
+                            {{ billing_form.as_p }}
+
+
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-secondary">pay now</button>
+                </form>
+
+            </div>
+        </div>
+    </div>
+    <br/>
+
+    <script>
+        //update code
+        $(document).on('click', '.update-cart', function (e) {
+            e.preventDefault();
+            var productid = $(this).data('index');
+            var productQty = $('#select' + productid + ' option:selected').val(); // Tanlangan qiymatni olish
+
+            $.ajax({
+                type: 'POST',
+                url: '{% url "cart_update" %}',
+                data: {
+                    product_id: productid,
+                    product_qty: productQty,
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    action: 'post'
+                },
+                success: function (json) {
+                    location.reload();
+                },
+                error: function (xhr, errmsg, err) {
+                    console.error(errmsg);
+                }
+            });
+        });
+
+
+        //delete code
+        $(document).on('click', '.delete-product', function (e) {
+            e.preventDefault();
+            var productid = $(this).data('index');
+            //var productQty = $('#select' + productid + ' option:selected').val(); // Tanlangan qiymatni olish
+
+            $.ajax({
+                type: 'POST',
+                url: '{% url "cart_delete" %}',
+                data: {
+                    product_id: productid,
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    action: 'post'
+                },
+                success: function (json) {
+                    location.reload();
+                },
+                error: function (xhr, errmsg, err) {
+                    console.error(errmsg);
+                }
+            });
+        });
+    </script>
+
+    <style>
+        .product-info {
+            margin-bottom: 10px;
+        }
+
+        .product-quantity {
+            display: block;
+            font-size: 0.875rem; /* Bu matnni kichikroq qiladi */
+            color: #6c757d; /* Bu matn rangini o'zgartiradi */
+        }
+    </style>
+
+{% endblock %}
